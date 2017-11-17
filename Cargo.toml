@@ -1,0 +1,14 @@
+[package]
+name = "asteroid_thing"
+version = "0.1.0"
+authors = ["Ashley <expenses@airmail.cc>"]
+
+[dependencies]
+rand = "*"
+nphysics2d = "*"
+nalgebra = "*"
+ncollide = "*"
+
+[dependencies.sdl2]
+version = "*"
+features = ["image"]
