@@ -3,6 +3,7 @@ use ncollide::query::Ray;
 use ncollide::query::RayCast;
 use sdl2::pixels::Color;
 use ord_subset::OrdSubsetIterExt;
+use alga::general::Inverse;
 
 use Controls;
 use context::Context;
@@ -106,6 +107,15 @@ impl WeaponRay {
             }.map(|intersection| (ship, self.ray.origin + self.ray.dir * intersection.toi)))
             .ord_subset_min_by_key(|&(_, intersection)| distance(&self.ray.origin, &intersection)) {
                 self.intersection = Some(intersection);
+
+                match self.tag {
+                    WeaponType::TractionBeam => {
+                        let mut rigid_body = ship.handle.borrow_mut();
+                        let relative = intersection.coords - rigid_body.position().translation.vector;
+                        rigid_body.apply_impulse_wrt_point(self.ray.dir.inverse() * 1000.0, relative);
+                    },
+                    WeaponType::Laser => {}
+                };
         }
     }
 }
