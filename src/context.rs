@@ -53,7 +53,7 @@ impl<'a> Context<'a> {
     }
 
     fn to_rect(x: f32, y: f32, width: f32, height: f32) -> Rect {
-        Rect::new((x - width / 2.0).round() as i32, (y - height / 2.0).round() as i32, (width+0.5).ceil() as u32, (height+0.5).ceil() as u32)
+        Rect::new((x - width / 2.0).round() as i32, (y - height / 2.0).round() as i32, width.round() as u32 + 1, height.round() as u32 + 1)
     }
 
     pub fn draw_rotated(&mut self, image: &Image, x: f32, y: f32, width: f32, height: f32, rotation: f32) {

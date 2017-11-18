@@ -47,6 +47,7 @@ pub enum ComponentType {
 }
 
 impl ComponentType {
+    // Whether the component collides with other components
     fn collides(&self) -> bool {
         match *self {
             ComponentType::Pipe | ComponentType::Engine | ComponentType::Hardpoint(_) => false,
@@ -77,6 +78,7 @@ impl ComponentType {
         100
     }
 
+    // Create a weapon hardpoint
     pub fn hardpoint(tag: WeaponType) -> Self {
         ComponentType::Hardpoint(Weapon::new(tag))
     }
@@ -108,19 +110,23 @@ impl Component {
         }
     }
 
+    // The vector to the center of the ship
     fn vector(&self) -> Vector2<f32> {
         Vector2::new(self.x as f32 * SIZE, self.y as f32 * SIZE)
     }
 
+    // The rotated vector to the center of the ship
     fn vector_rotated(&self, rotation: f32) -> Vector2<f32> {
         Rotation2::new(rotation).transform_vector(&self.vector())
     }
 
+    // The location of the component in world coordinates
     fn position(&self, base: &Isometry2<f32>) -> (Vector2<f32>, f32) {
         let rotation = base.rotation.arg();
         (base.translation.vector + self.vector_rotated(rotation), rotation)
     }
 
+    // Move the component's weapon if it has one
     fn step_weapon(&mut self, base: &Isometry2<f32>, controls: &Controls, rays: &mut Vec<WeaponRay>) {
         let (pos, rotation) = self.position(base);
         if let ComponentType::Hardpoint(ref mut weapon) = self.tag {
@@ -128,6 +134,7 @@ impl Component {
         }
     }
 
+    // Damage the component and return if it has been destroyed
     fn damage(&mut self, damage: i16) -> bool {
         self.health = self.health.saturating_sub(damage);
         self.health == 0

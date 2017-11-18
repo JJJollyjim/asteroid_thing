@@ -19,6 +19,7 @@ pub enum Image {
 
 macro_rules! load_image {
     ($texture_creator: expr, $path: expr) => ({
+        // Load the bytes into a read/write struct, create a surface and then a texture from that surface
         let rwops = RWops::from_bytes(include_bytes!(concat!("../resources/", $path)))?;
         let surface = rwops.load_png()?;
         $texture_creator.create_texture_from_surface(surface)?
