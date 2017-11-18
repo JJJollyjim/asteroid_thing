@@ -4,7 +4,7 @@ use sdl2::render::BlendMode;
 use sdl2::video::WindowContext;
 use sdl2::pixels::Color;
 use nphysics2d::world::World;
-use nphysics2d::object::RigidBody;
+use nphysics2d::object::{RigidBody, RigidBodyHandle};
 use nalgebra::{Translation2, UnitComplex};
 
 use std::rc::Rc;
@@ -53,7 +53,7 @@ impl<'a> Context<'a> {
     }
 
     fn to_rect(x: f32, y: f32, width: f32, height: f32) -> Rect {
-        Rect::new((x - width / 2.0).round() as i32, (y - height / 2.0).round() as i32, (width+0.5).ceil() as u32, (height+0.5).ceil() as u32)
+        Rect::new((x - width / 2.0).round() as i32, (y - height / 2.0).round() as i32, width.round() as u32 + 1, height.round() as u32 + 1)
     }
 
     pub fn draw_rotated(&mut self, image: &Image, x: f32, y: f32, width: f32, height: f32, rotation: f32) {
@@ -74,5 +74,9 @@ impl<'a> Context<'a> {
         body.append_rotation(&UnitComplex::new(rotation));
         body.set_deactivation_threshold(None);
         self.world.add_rigid_body(body)
+    }
+
+    pub fn remove_rigid_body(&mut self, body: &RigidBodyHandle<f32>) {
+        self.world.remove_rigid_body(body);
     }
 }
