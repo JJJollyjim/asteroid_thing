@@ -223,7 +223,7 @@ impl Ship {
     }
 
     pub fn damage(&mut self, point: Point2<f32>, ctx: &mut Context) -> bool {
-        let (component, x, y, rotation) = {
+        let (component, x, y, rotation, lin_vel, ang_vel) = {
             let rigid_body = self.handle.borrow();
             let position = rigid_body.position();
 
@@ -232,7 +232,8 @@ impl Ship {
                     .filter(|&(_, ref component)| component.tag.collides())
                     .ord_subset_min_by_key(|&(_, ref component)| distance(&Point2::from_coordinates(component.position(position).0), &point))
                     .map(|(i, component)| (i, component.damage(1))),
-                position.translation.vector.x, position.translation.vector.y, position.rotation.arg()
+                position.translation.vector.x, position.translation.vector.y, position.rotation.arg(),
+                rigid_body.lin_vel(), rigid_body.ang_vel()
             )
         };
 
@@ -244,6 +245,9 @@ impl Ship {
                 true
             } else {
                 self.handle = Self::create_rigid_body(ctx, &self.components, x, y, rotation);
+                let mut body = self.handle.borrow_mut();
+                body.set_lin_vel(lin_vel);
+                body.set_ang_vel(ang_vel);
                 false
             }
         } else {
