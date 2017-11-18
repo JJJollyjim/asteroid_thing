@@ -19,6 +19,7 @@ mod ships;
 mod context;
 mod resources;
 mod weapons;
+mod selections;
 
 const WIDTH: u32 = 1280;
 const HEIGHT: u32 = 800;
@@ -27,6 +28,7 @@ use ships::{Component, ComponentType, Ship, Rotation};
 use weapons::WeaponType;
 use context::Context;
 use colours::{BLACK, WHITE};
+use selections::Selection;
 
 #[derive(Default)]
 pub struct Controls {
@@ -34,7 +36,8 @@ pub struct Controls {
     left: bool,
     right: bool,
     mouse: (f32, f32),
-    mouse_down: bool
+    mouse_down: bool,
+    selection: Option<Selection>
 }
 
 impl Controls {
@@ -47,8 +50,24 @@ impl Controls {
         }
     }
 
+    fn handle_mouse_down(&mut self) {
+        self.mouse_down = true;
+        self.selection = Some(Selection::new(self.mouse));
+    }
+
+    fn handle_mouse_up(&mut self) {
+        self.mouse_down = false;
+        self.selection = None;
+    }
+
     fn move_mouse(&mut self, x: i32, y: i32) {
         self.mouse = (x as f32, y as f32);
+
+        if self.mouse_down {
+            if let Some(ref mut sel) = self.selection {
+                sel.update_corner(self.mouse);
+            }
+        }
     }
 }
 
@@ -129,8 +148,8 @@ fn main() {
                 Event::KeyDown {keycode: Some(key), ..} => controls.handle_key(key, true),
                 Event::KeyUp {keycode: Some(key), ..} => controls.handle_key(key, false),
                 Event::MouseMotion {x, y, ..} => controls.move_mouse(x, y),
-                Event::MouseButtonDown {mouse_btn: MouseButton::Left, ..} => controls.mouse_down = true,
-                Event::MouseButtonUp   {mouse_btn: MouseButton::Left, ..} => controls.mouse_down = false,
+                Event::MouseButtonDown {mouse_btn: MouseButton::Left, ..} => controls.handle_mouse_down(),
+                Event::MouseButtonUp   {mouse_btn: MouseButton::Left, ..} => controls.handle_mouse_up(),
                 _ => {}
             }
         }
@@ -149,6 +168,8 @@ fn main() {
         rays.iter_mut().for_each(|ray| ray.intersect(&mut ships));
         rays.iter().for_each(|ray| ray.draw(&mut ctx));
         rays.clear();
+
+        controls.selection.iter().for_each(|sel| sel.draw(&mut ctx, &ships[0]));
 
         ctx.present();
     }

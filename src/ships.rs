@@ -109,7 +109,7 @@ impl Component {
         Rotation2::new(rotation).transform_vector(&self.vector())
     }
 
-    fn position(&self, base: &Isometry2<f32>) -> (Vector2<f32>, f32) {
+    pub fn position(&self, base: &Isometry2<f32>) -> (Vector2<f32>, f32) {
         let rotation = base.rotation.arg();
         (base.translation.vector + self.vector_rotated(rotation), rotation)
     }
@@ -139,7 +139,7 @@ impl ThrustDirection {
 }
 
 pub struct Ship {
-    components: Vec<Component>,
+    pub components: Vec<Component>,
     pub handle: RigidBodyHandle<f32>
 }
 
