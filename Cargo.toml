@@ -5,9 +5,17 @@ authors = ["Ashley <expenses@airmail.cc>"]
 
 [dependencies]
 rand = "*"
+# The main physics libs
 nphysics2d = "*"
 nalgebra = "*"
 ncollide = "*"
+# Only need these for structs/traits
+num-complex = "*"
+alga = "*"
+# Laziness
+derive_is_enum_variant = "*"
+# min_by_key for floats
+ord_subset = "*"
 
 [dependencies.sdl2]
 version = "*"
