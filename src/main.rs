@@ -40,9 +40,9 @@ pub struct Controls {
 impl Controls {
     fn handle_key(&mut self, key: Keycode, pressed: bool) {
         match key {
-            Keycode::Up    => self.up    = pressed,
-            Keycode::Left  => self.left  = pressed,
-            Keycode::Right => self.right = pressed,
+            Keycode::W | Keycode::Up    => self.up    = pressed,
+            Keycode::A | Keycode::Left  => self.left  = pressed,
+            Keycode::D | Keycode::Right => self.right = pressed,
             _ => {}
         }
     }
