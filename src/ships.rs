@@ -1,7 +1,8 @@
 use nphysics2d::object::{RigidBody, RigidBodyHandle};
 use ncollide::shape::{Cuboid, Compound, ShapeHandle};
-use nalgebra::{Vector2, Isometry2, Rotation2};
+use nalgebra::{Vector2, Isometry2, Rotation2, distance, Point2};
 use alga::linear::Transformation;
+use ord_subset::OrdSubsetIterExt;
 
 use context::Context;
 use resources::Image;
@@ -72,6 +73,10 @@ impl ComponentType {
         }
     }
 
+    fn max_health(&self) -> i16 {
+        100
+    }
+
     pub fn hardpoint(tag: WeaponType) -> Self {
         ComponentType::Hardpoint(Weapon::new(tag))
     }
@@ -82,13 +87,15 @@ pub struct Component {
     tag: ComponentType,
     rotation: Rotation,
     x: i8,
-    y: i8
+    y: i8,
+    health: i16
 }
 
 impl Component {
     pub fn new(tag: ComponentType, x: i8, y: i8, rotation: Rotation) -> Self {
         Self {
-            tag, rotation, x, y
+            health: tag.max_health(),
+            tag, rotation, x, y,
         }
     }
 
@@ -120,6 +127,11 @@ impl Component {
             weapon.step(pos, rotation, controls, rays)
         }
     }
+
+    fn damage(&mut self, damage: i16) -> bool {
+        self.health = self.health.saturating_sub(damage);
+        self.health == 0
+    }
 }
 
 pub enum ThrustDirection {
@@ -144,17 +156,9 @@ pub struct Ship {
 }
 
 impl Ship {
-    pub fn new(ctx: &mut Context, components: Vec<Component>, x: f32, y: f32, rotation: f32) -> Self {
-        let shape = ShapeHandle::new(Cuboid::new(Vector2::new(RADIUS, RADIUS)));
-        let density = components.iter().map(|component| component.tag.density()).sum::<f32>() / components.len() as f32;
-        
+    pub fn new(ctx: &mut Context, components: Vec<Component>, x: f32, y: f32, rotation: f32) -> Self {        
         Self {
-            handle: ctx.add_rigid_body(RigidBody::new_dynamic(
-                Compound::new(components.iter()
-                    .filter(|component| component.tag.collides())
-                    .map(|component| (Isometry2::new(component.vector(), 0.0), shape.clone())
-                ).collect()), density, 1.0, 1.0), x, y, rotation
-            ),
+            handle: Self::create_rigid_body(ctx, &components, x, y, rotation),
             components
         }
     }
@@ -183,7 +187,6 @@ impl Ship {
                 let relative_vector = component.vector_rotated(rotation);
                 let direction = direction.direction(rotation + component.rotation.to_radians());
                 rigid_body.apply_impulse_wrt_point(direction, relative_vector);
-
 
                 let component_pos = pos + relative_vector;
                 ctx.draw_line(component_pos.x, component_pos.y, pos.x, pos.y);
@@ -217,5 +220,46 @@ impl Ship {
         let (x, y) = (position.translation.vector.x, position.translation.vector.y);
         ctx.set_colour(RED);
         ctx.draw_point(x as i32, y as i32);
+    }
+
+    pub fn damage(&mut self, point: Point2<f32>, ctx: &mut Context) -> bool {
+        let (component, x, y, rotation) = {
+            let rigid_body = self.handle.borrow();
+            let position = rigid_body.position();
+
+            (
+                self.components.iter_mut().enumerate()
+                    .filter(|&(_, ref component)| component.tag.collides())
+                    .ord_subset_min_by_key(|&(_, ref component)| distance(&Point2::from_coordinates(component.position(position).0), &point))
+                    .map(|(i, component)| (i, component.damage(1))),
+                position.translation.vector.x, position.translation.vector.y, position.rotation.arg()
+            )
+        };
+
+        if let Some((index, true)) = component {
+            self.components.remove(index);
+            ctx.remove_rigid_body(&self.handle);
+
+            if self.components.len() == 0 {
+                true
+            } else {
+                self.handle = Self::create_rigid_body(ctx, &self.components, x, y, rotation);
+                false
+            }
+        } else {
+            false
+        }
+    }
+
+    fn create_rigid_body(ctx: &mut Context, components: &Vec<Component>, x: f32, y: f32, rotation: f32) -> RigidBodyHandle<f32> {
+        let shape = ShapeHandle::new(Cuboid::new(Vector2::new(RADIUS, RADIUS)));
+        let density = components.iter().map(|component| component.tag.density()).sum::<f32>() / components.len() as f32;
+
+        ctx.add_rigid_body(RigidBody::new_dynamic(
+            Compound::new(components.iter()
+                .filter(|component| component.tag.collides())
+                .map(|component| (Isometry2::new(component.vector(), 0.0), shape.clone())
+            ).collect()), density, 1.0, 1.0), x, y, rotation
+        )
     }
 }

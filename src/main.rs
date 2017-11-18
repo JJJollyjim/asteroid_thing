@@ -146,7 +146,7 @@ fn main() {
 
         ships[0].step(&controls, &mut ctx, &mut rays);
 
-        rays.iter_mut().for_each(|ray| ray.intersect(&mut ships));
+        rays.iter_mut().for_each(|ray| ray.intersect(&mut ships, &mut ctx));
         rays.iter().for_each(|ray| ray.draw(&mut ctx));
         rays.clear();
 

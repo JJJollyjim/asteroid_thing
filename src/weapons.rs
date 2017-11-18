@@ -99,22 +99,24 @@ impl WeaponRay {
         ctx.draw_line(origin.x, origin.y, end.x, end.y);
     }
 
-    pub fn intersect(&mut self, ships: &mut Vec<Ship>) {
-        if let Some((ship, intersection)) = ships.iter_mut()
-            .filter_map(|ship| {
+    pub fn intersect(&mut self, ships: &mut Vec<Ship>, ctx: &mut Context) {
+        if let Some((i, intersection)) = ships.iter().enumerate()
+            .filter_map(|(i, ship)| {
                 let rigid_body = ship.handle.borrow();
                 rigid_body.shape().as_ref().toi_and_normal_with_ray(&rigid_body.position(), &self.ray, true)
-            }.map(|intersection| (ship, self.ray.origin + self.ray.dir * intersection.toi)))
+            }.map(|intersection| (i, self.ray.origin + self.ray.dir * intersection.toi)))
             .ord_subset_min_by_key(|&(_, intersection)| distance(&self.ray.origin, &intersection)) {
                 self.intersection = Some(intersection);
 
                 match self.tag {
                     WeaponType::TractionBeam => {
-                        let mut rigid_body = ship.handle.borrow_mut();
+                        let mut rigid_body = ships[i].handle.borrow_mut();
                         let relative = intersection.coords - rigid_body.position().translation.vector;
                         rigid_body.apply_impulse_wrt_point(self.ray.dir.inverse() * 1000.0, relative);
                     },
-                    WeaponType::Laser => {}
+                    WeaponType::Laser => if ships[i].damage(intersection, ctx) {
+                        ships.remove(i);
+                    }
                 };
         }
     }

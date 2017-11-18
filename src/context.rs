@@ -4,7 +4,7 @@ use sdl2::render::BlendMode;
 use sdl2::video::WindowContext;
 use sdl2::pixels::Color;
 use nphysics2d::world::World;
-use nphysics2d::object::RigidBody;
+use nphysics2d::object::{RigidBody, RigidBodyHandle};
 use nalgebra::{Translation2, UnitComplex};
 
 use std::rc::Rc;
@@ -74,5 +74,9 @@ impl<'a> Context<'a> {
         body.append_rotation(&UnitComplex::new(rotation));
         body.set_deactivation_threshold(None);
         self.world.add_rigid_body(body)
+    }
+
+    pub fn remove_rigid_body(&mut self, body: &RigidBodyHandle<f32>) {
+        self.world.remove_rigid_body(body);
     }
 }
